@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>competitor.monitor — Troax EMEA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0F0F0D;--bg2:#1A1A16;--bg3:#242420;
+  --text:#E8E6DF;--text2:#A0A098;--text3:#606058;
+  --border:#2A2A26;--border2:#3A3A36;
+  --accent:#B85042;--accent2:#3B6D11;--gold:#BA7517;
+  --card:#161614;--radius:4px;
+}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;min-height:100vh;}
+.cm{max-width:1500px;margin:0 auto;padding:1.5rem 1.25rem;}
+
+.cm-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;}
+.cm-wordmark{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;letter-spacing:-0.5px;}
+.cm-wordmark span{color:var(--accent);}
+.cm-subtitle{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;margin-top:4px;}
+.cm-header-right{display:flex;gap:8px;align-items:center;}
+
+.cm-controls{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.cm-controls-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+.cm-controls-row:last-child{margin-bottom:0;}
+.cm-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.06em;white-space:nowrap;}
+
+select{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 10px;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);border-radius:var(--radius);cursor:pointer;outline:none;}
+select:focus{border-color:var(--accent);}
+
+.btn{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;padding:8px 20px;border-radius:var(--radius);cursor:pointer;letter-spacing:0.04em;transition:all 0.15s;white-space:nowrap;}
+.btn-run{background:var(--accent);color:#fff;border:none;}
+.btn-run:hover{background:#8a3830;}
+.btn-run:disabled{opacity:0.45;cursor:not-allowed;}
+.btn-outline{background:transparent;border:0.5px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{color:var(--text);border-color:var(--text2);}
+
+.cm-stats{display:flex;gap:24px;padding:12px 16px;background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+.stat-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;line-height:1.1;}
+.stat-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-top:1px;}
+.cm-last-run{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto;}
+
+.cm-key{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.cm-key-item{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);}
+.cm-key-dot{width:6px;height:6px;border-radius:50%;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;}
+
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color 0.15s;}
+.card:hover{border-color:var(--border2);}
+.card-head{padding:11px 13px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.card-name{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--text);}
+.card-url{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);margin-top:2px;}
+.card-url a{color:var(--text3);text-decoration:none;}
+.card-url a:hover{color:var(--accent);}
+.card-meta{text-align:right;flex-shrink:0;}
+.card-geo{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);}
+.card-rerun{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);background:transparent;border:none;cursor:pointer;padding:0;margin-top:3px;display:block;}
+.card-rerun:hover{color:var(--accent);}
+
+.card-body{padding:13px;}
+
+.status{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:8px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.dot.loading{background:var(--gold);animation:blink 1s infinite;}
+.dot.done{background:var(--accent2);}
+.dot.error{background:var(--accent);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+.empty{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);padding:4px 0;}
+
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:3px;margin-top:9px;}
+.sec-label:first-child{margin-top:0;}
+.sec-text{font-size:11px;line-height:1.65;color:var(--text2);}
+
+.pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:20px;margin-right:4px;}
+.pill.high{border:0.5px solid #8a3830;color:#E24B4A;background:rgba(226,75,74,0.08);}
+.pill.medium{border:0.5px solid var(--border2);color:var(--text2);background:rgba(186,117,23,0.08);}
+.pill.low{border:0.5px solid #27500A;color:#639922;background:rgba(99,153,34,0.08);}
+
+.api-key-banner{background:rgba(186,117,23,0.12);border:0.5px solid var(--gold);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);}
+.api-key-banner input{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 10px;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);border-radius:var(--radius);width:340px;margin-left:10px;outline:none;}
+.api-key-banner input:focus{border-color:var(--gold);}
+.api-key-banner button{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 12px;background:var(--gold);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;margin-left:8px;}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr;}
+  .cm-stats{gap:16px;}
+  .api-key-banner input{width:180px;}
+}
+</style>
+</head>
+<body>
+<div class="cm">
+  <div class="cm-header">
+    <div>
+      <div class="cm-wordmark">competitor<span>.</span>monitor</div>
+      <div class="cm-subtitle">Troax EMEA — Market Intelligence</div>
+    </div>
+    <div class="cm-header-right">
+      <button class="btn btn-outline" onclick="exportReport()">export .txt</button>
+      <button class="btn btn-outline" onclick="clearAll()">clear all</button>
+    </div>
+  </div>
+
+  <div class="api-key-banner" id="apiKeyBanner">
+    ⚠ API key required to run analysis.
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." oninput="saveKey()">
+    <button onclick="saveKey();document.getElementById('apiKeyBanner').style.display='none'">save</button>
+    <span style="font-size:9px;color:var(--text3);margin-left:10px;">stored in localStorage — never sent anywhere except Anthropic API</span>
+  </div>
+
+  <div class="cm-controls">
+    <div class="cm-controls-row">
+      <span class="cm-label">SCOPE</span>
+      <select id="scopeSel" onchange="onScopeChange()">
+        <option value="all">all competitors (16)</option>
+        <option value="single">single competitor</option>
+      </select>
+      <select id="singleSel" style="display:none" onchange="renderGrid()">
+        <option value="">select competitor...</option>
+      </select>
+      <span class="cm-label">FOCUS</span>
+      <select id="focusSel">
+        <option value="overview">full overview</option>
+        <option value="positioning">positioning &amp; messaging</option>
+        <option value="digital">digital &amp; advertising</option>
+        <option value="products">products &amp; innovation</option>
+        <option value="threats">threats to Troax</option>
+      </select>
+    </div>
+    <div class="cm-controls-row">
+      <button class="btn btn-run" id="runBtn" onclick="runAnalysis()">▶ run analysis</button>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);">runs in batches of 2 — all 16 takes ~4 mins</span>
+    </div>
+  </div>
+
+  <div class="cm-stats">
+    <div><div class="stat-num" id="sTot">16</div><div class="stat-label">competitors</div></div>
+    <div><div class="stat-num" id="sDone" style="color:var(--accent2)">0</div><div class="stat-label">analysed</div></div>
+    <div><div class="stat-num" id="sPend" style="color:var(--gold)">0</div><div class="stat-label">running</div></div>
+    <div><div class="stat-num" id="sErr" style="color:var(--accent)">0</div><div class="stat-label">errors</div></div>
+    <div class="cm-last-run" id="lastRun">not yet run</div>
+  </div>
+
+  <div class="cm-key">
+    <span class="cm-key-item"><span class="cm-key-dot" style="background:var(--accent2)"></span>analysed</span>
+    <span class="cm-key-item"><span class="cm-key-dot" style="background:var(--gold)"></span>running</span>
+    <span class="cm-key-item"><span class="cm-key-dot" style="background:var(--text3)"></span>pending</span>
+    <span class="cm-key-item"><span class="cm-key-dot" style="background:var(--accent)"></span>error</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto;">click any card's ↺ to re-run individually</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const COMPS = [
+  {name:'Axelent',url:'https://www.axelent.com/en',geo:'🇸🇪 SE',note:'Broke out from Troax, possibly same size. Direct competitor across machine guarding and warehouse partitioning.'},
+  {name:'A-Safe',url:'https://www.asafe.com',geo:'🇬🇧 UK',note:'Barriers specialist. Known to be bidding above Troax on paid search. Focus on physical safety barriers.'},
+  {name:'Genmacs',url:'https://genmacs.com.tr',geo:'🇹🇷 TR',note:'Turkish manufacturer of machine guarding and safety solutions.'},
+  {name:'Brühl Safety',url:'https://bruehl-safety.com',geo:'🇩🇪 DE',note:'German safety solutions manufacturer.'},
+  {name:'QTS Europe',url:'https://www.qtseurope.com',geo:'🇪🇺 EU',note:'European safety and partitioning solutions.'},
+  {name:'GS Motion',url:'https://gsmotion.de/en/special-solutions',geo:'🇩🇪 DE',note:'German industrial safety and motion solutions.'},
+  {name:'Della Casa',url:'https://www.dellacasa.net/en',geo:'🇮🇹 IT',note:'Italian industrial mesh and safety panel manufacturer.'},
+  {name:'Manta Mesh',url:'https://mantamesh.com',geo:'🇬🇧 UK',note:'UK mesh and partitioning solutions.'},
+  {name:'Accessafe',url:'https://www.accessafe.eu/en',geo:'🇪🇺 EU',note:'European access and safety solutions.'},
+  {name:'Protec Italy',url:'https://www.protec-italy.net',geo:'🇮🇹 IT',note:'Italian safety and protection systems manufacturer.'},
+  {name:'Demma',url:'https://en.demma.com',geo:'🇪🇺 EU',note:'European industrial safety solutions.'},
+  {name:'Kigistec',url:'https://kigistec.com/en',geo:'🇪🇺 EU',note:'Industrial safety and partitioning systems.'},
+  {name:'Mecalux',url:'https://www.mecalux.com',geo:'🇪🇸 ES',note:'Large Spanish racking and warehouse storage player. Overlaps on warehouse partitioning.'},
+  {name:'Euromaas',url:'https://euromaas.com/en',geo:'🇳🇱 NL',note:'Dutch industrial safety and mesh solutions.'},
+  {name:'Blank MT',url:'https://blank-mt.com',geo:'🇩🇪 DE',note:'German machine guarding and safety technology.'},
+  {name:'Blaxtair',url:'https://blaxtair.com/en',geo:'🇫🇷 FR',note:'French active safety technology — pedestrian detection, sensors. Overlaps with Troax active safety push.'},
+];
+
+const PROMPTS = {
+  overview:`You are a competitive intelligence analyst for Troax, a Swedish-listed global leader in indoor perimeter protection — mesh panel solutions for machine guarding, warehouse partitioning, and property protection. Troax positions as a "global safety solutions partner delivering through local expertise."
+
+Search the web for current information about this competitor, then provide a structured intelligence report using EXACTLY these headers (numbered, all caps):
+
+1. POSITIONING: Their core value proposition and how they present themselves
+2. PRODUCTS: Main product lines, any innovations or recent launches
+3. DIGITAL: Website quality, LinkedIn presence, any visible advertising
+4. MARKETS: Key sectors and geographies they target
+5. THREAT LEVEL: High / Medium / Low — and one sentence explaining why
+6. KEY INSIGHT: One actionable point specifically for Troax's EMEA marketing team
+
+Be concise, specific, and evidence-based. No generic statements.`,
+
+  positioning:`You are a competitive intelligence analyst for Troax, a global leader in mesh panel safety solutions (machine guarding, warehouse partitioning, property protection). Troax is repositioning from product promoter to "global safety solutions partner."
+
+Search the web for current information about this competitor, then analyse their positioning using EXACTLY these headers:
+
+1. CORE MESSAGE: Their headline positioning statement or tagline
+2. VALUE PROPS: What they claim makes them different from competitors
+3. TONE: How they communicate — technical / commercial / safety-led / price-led / other
+4. VS TROAX: Where their positioning directly competes with or differs from Troax's approach
+5. CONTENT TOPICS: What subjects they publish or communicate about
+6. KEY INSIGHT: One specific thing Troax should do differently or better based on this competitor's approach`,
+
+  digital:`You are a digital marketing analyst for Troax, a global mesh panel safety solutions company expanding its digital acquisition capabilities across EMEA.
+
+Search the web for current information about this competitor's digital presence, then analyse using EXACTLY these headers:
+
+1. WEBSITE: Quality, clarity, UX — rate 1-10 with one sentence reason
+2. PAID SEARCH: Any visible Google Ads activity? What keywords might they target?
+3. SOCIAL: LinkedIn page followers, posting frequency, content quality
+4. LEAD GEN: How do they capture leads — forms, gated content, demo requests, phone?
+5. DIGITAL MATURITY: Advanced / Developing / Basic — with brief justification
+6. OPPORTUNITY: Where is Troax currently better positioned digitally, or where could they overtake this competitor?`,
+
+  products:`You are a product intelligence analyst for Troax, which offers: machine guarding panels, warehouse partitioning, property protection mesh, active safety solutions (wireless warning systems), and safety consulting (via ST&L acquisition).
+
+Search the web for current information about this competitor's products, then analyse using EXACTLY these headers:
+
+1. CORE PRODUCTS: What they manufacture and sell
+2. OVERLAP WITH TROAX: Where they directly compete on product type
+3. TROAX ADVANTAGES: What Troax offers that this competitor doesn't
+4. INNOVATION SIGNALS: New products, R&D activity, recent launches visible online
+5. PRICING SIGNALS: Premium / mid-market / budget — based on any available evidence
+6. KEY INSIGHT: One product intelligence point the Troax marketing team should act on`,
+
+  threats:`You are a strategic analyst for Troax, a global mesh panel safety solutions company with strong EMEA market share, actively pursuing growth through digital lead generation and new market segments.
+
+Search the web for current information about this competitor, then analyse the specific threats they pose using EXACTLY these headers:
+
+1. DIRECT THREAT: Which specific Troax customer segments or markets they could realistically take
+2. MESSAGING THREAT: Where their positioning or claims undermine Troax's value propositions
+3. GEOGRAPHIC THREAT: Which markets or regions they are strongest in and why
+4. DIGITAL THREAT: Any areas where they outperform or out-invest Troax digitally
+5. THREAT RATING: High / Medium / Low — one sentence justification based on evidence
+6. RECOMMENDED RESPONSE: One specific action Troax EMEA marketing should take in response to this competitor`,
+};
+
+let results = {};
+let isRunning = false;
+
+
+// Populate single dropdown
+const ss = document.getElementById('singleSel');
+COMPS.forEach(c => {
+  const o = document.createElement('option');
+  o.value = c.name;
+  o.textContent = c.name;
+  ss.appendChild(o);
+});
+
+function onScopeChange() {
+  const v = document.getElementById('scopeSel').value;
+  document.getElementById('singleSel').style.display = v === 'single' ? 'inline-block' : 'none';
+  renderGrid();
+}
+
+function getVisible() {
+  const scope = document.getElementById('scopeSel').value;
+  const single = document.getElementById('singleSel').value;
+  if (scope === 'single' && single) return COMPS.filter(c => c.name === single);
+  return COMPS;
+}
+
+function updateStats() {
+  const done = Object.values(results).filter(r => r.status === 'done').length;
+  const pend = Object.values(results).filter(r => r.status === 'loading').length;
+  const err = Object.values(results).filter(r => r.status === 'error').length;
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sPend').textContent = pend;
+  document.getElementById('sErr').textContent = err;
+}
+
+function cid(name) { return 'card_' + name.replace(/[^a-z0-9]/gi, '_'); }
+
+function renderCardBody(comp) {
+  const r = results[comp.name];
+  const el = document.getElementById(cid(comp.name));
+  if (!el) return;
+  const body = el.querySelector('.card-body');
+
+  if (!r) {
+    body.innerHTML = '<div class="empty">click ▶ run analysis to start</div>';
+    return;
+  }
+  if (r.status === 'loading') {
+    body.innerHTML = '<div class="status"><div class="dot loading"></div>searching web &amp; analysing...</div><div class="empty" style="margin-top:4px">typically 20-40 seconds</div>';
+    return;
+  }
+  if (r.status === 'error') {
+    body.innerHTML = `<div class="status"><div class="dot error"></div>error</div><div class="sec-text" style="color:var(--accent);font-size:11px">${escHtml(r.data)}</div>`;
+    return;
+  }
+
+  const text = r.data || '';
+  const sections = parseText(text);
+  const ts = r.ts ? r.ts.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+
+  let html = `<div class="status"><div class="dot done"></div>analysed ${ts} — ${escHtml(r.focus||'overview')}</div>`;
+  sections.forEach(s => {
+    let body_text = escHtml(s.text);
+    if (s.label.match(/THREAT|RATING/)) {
+      const lo = s.text.toLowerCase();
+      if (lo.match(/^high/)) body_text = '<span class="pill high">HIGH</span>' + body_text;
+      else if (lo.match(/^med/)) body_text = '<span class="pill medium">MEDIUM</span>' + body_text;
+      else if (lo.match(/^low/)) body_text = '<span class="pill low">LOW</span>' + body_text;
+    }
+    html += `<div class="sec-label">${escHtml(s.label)}</div><div class="sec-text">${body_text}</div>`;
+  });
+
+  body.innerHTML = html;
+}
+
+function parseText(text) {
+  const sections = [];
+  let cur = null;
+  text.split('\n').forEach(line => {
+    const t = line.trim().replace(/\*\*/g, '');
+    const m = t.match(/^(\d+)\.\s+([A-Z][A-Z\s&\/]+?)(?:\s*:)\s*(.*)/);
+    if (m) {
+      if (cur) sections.push(cur);
+      cur = { label: m[2].trim(), text: m[3] || '' };
+    } else if (cur && t && !t.match(/^\d+\./)) {
+      cur.text += (cur.text ? ' ' : '') + t;
+    }
+  });
+  if (cur) sections.push(cur);
+  if (!sections.length && text.trim()) sections.push({ label: 'ANALYSIS', text: text.trim() });
+  return sections;
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  getVisible().forEach(comp => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.id = cid(comp.name);
+    div.innerHTML = `
+      <div class="card-head">
+        <div>
+          <div class="card-name">${escHtml(comp.name)}</div>
+          <div class="card-url"><a href="${escHtml(comp.url)}" target="_blank" rel="noopener">${escHtml(comp.url.replace('https://','').split('/')[0])}</a></div>
+        </div>
+        <div class="card-meta">
+          <div class="card-geo">${comp.geo}</div>
+          <button class="card-rerun" onclick="rerunOne('${escHtml(comp.name)}')">↺ re-run</button>
+        </div>
+      </div>
+      <div class="card-body"><div class="empty">click ▶ run analysis to start</div></div>`;
+    grid.appendChild(div);
+    if (results[comp.name]) renderCardBody(comp);
+  });
+}
+
+async function analyseOne(comp) {
+  const focus = document.getElementById('focusSel').value;
+  const prompt = PROMPTS[focus] || PROMPTS.overview;
+  const fullPrompt = `${prompt}
+
+COMPETITOR TO ANALYSE:
+Name: ${comp.name}
+Website: ${comp.url}
+Geography: ${comp.geo}
+${comp.note ? 'Additional context known about this competitor: ' + comp.note : ''}
+
+Please search the web for the most current information available about this company before writing your analysis. Use their website URL above as a starting point.`;
+
+  results[comp.name] = { status: 'loading', focus };
+  renderCardBody(comp);
+  updateStats();
+
+  try {
+    const res = await fetch('/.netlify/functions/proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: fullPrompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const d = await res.json();
+    let text = '';
+    const content = d.content || [];
+    content.forEach(b => { if (b.type === 'text') text += b.text; });
+
+    // If stopped for tool use, send tool results back
+    if (d.stop_reason === 'tool_use' && !text) {
+      const toolResults = content
+        .filter(b => b.type === 'tool_use')
+        .map(b => ({
+          type: 'tool_result',
+          tool_use_id: b.id,
+          content: b.type === 'tool_use' ? 'Search results received. Now write the structured analysis.' : ''
+        }));
+
+      const r2 = await fetch('/.netlify/functions/proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [
+            { role: 'user', content: fullPrompt },
+            { role: 'assistant', content: content },
+            { role: 'user', content: toolResults }
+          ]
+        })
+      });
+
+      if (r2.ok) {
+        const d2 = await r2.json();
+        (d2.content || []).forEach(b => { if (b.type === 'text') text += b.text; });
+      }
+    }
+
+    if (!text) text = 'No content returned. Try running again.';
+    results[comp.name] = { status: 'done', data: text, focus, ts: new Date() };
+
+  } catch (e) {
+    results[comp.name] = {
+      status: 'error',
+      data: `Error: ${e.message}. Check your API key is valid and has sufficient credits.`,
+      focus
+    };
+  }
+
+  renderCardBody(comp);
+  updateStats();
+  saveResultsToStorage();
+}
+
+async function rerunOne(name) {
+  const comp = COMPS.find(c => c.name === name);
+  if (comp) await analyseOne(comp);
+}
+
+async function runAnalysis() {
+  if (isRunning) return;
+  isRunning = true;
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ running...';
+
+  const visible = getVisible();
+
+  for (let i = 0; i < visible.length; i += 2) {
+    const batch = visible.slice(i, i + 2);
+    await Promise.all(batch.map(c => analyseOne(c)));
+    if (i + 2 < visible.length) await new Promise(r => setTimeout(r, 2000));
+  }
+
+  const now = new Date().toLocaleString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('lastRun').textContent = `last run: ${now}`;
+  btn.disabled = false;
+  btn.textContent = '▶ run again';
+  isRunning = false;
+}
+
+function saveResultsToStorage() {
+  try {
+    const toSave = {};
+    Object.keys(results).forEach(k => {
+      if (results[k].status === 'done') {
+        toSave[k] = { ...results[k], ts: results[k].ts?.toISOString() };
+      }
+    });
+    localStorage.setItem('cm_results', JSON.stringify(toSave));
+  } catch(e) {}
+}
+
+function loadResultsFromStorage() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('cm_results') || '{}');
+    Object.keys(saved).forEach(k => {
+      if (saved[k].ts) saved[k].ts = new Date(saved[k].ts);
+      results[k] = saved[k];
+    });
+  } catch(e) {}
+}
+
+function clearAll() {
+  if (!confirm('Clear all analysis results?')) return;
+  results = {};
+  localStorage.removeItem('cm_results');
+  renderGrid();
+  updateStats();
+}
+
+function exportReport() {
+  const done = COMPS.filter(c => results[c.name]?.status === 'done');
+  if (!done.length) { alert('Run analysis first — no results to export yet.'); return; }
+
+  const focus = document.getElementById('focusSel').value;
+  let report = `TROAX EMEA — COMPETITOR INTELLIGENCE REPORT\n`;
+  report += `Focus: ${focus.toUpperCase()}\n`;
+  report += `Generated: ${new Date().toLocaleString('en-GB')}\n`;
+  report += `Competitors analysed: ${done.length}\n`;
+  report += `${'='.repeat(60)}\n\n`;
+
+  done.forEach(c => {
+    const r = results[c.name];
+    report += `${c.name.toUpperCase()}\n`;
+    report += `${c.geo} | ${c.url}\n`;
+    report += `${'-'.repeat(50)}\n`;
+    report += `${r.data}\n\n`;
+  });
+
+  const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `troax_competitor_intel_${new Date().toISOString().split('T')[0]}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// Load saved results and render
+loadResultsFromStorage();
+renderGrid();
+updateStats();
+
+// Restore last run time if we have results
+const savedResults = Object.values(results).filter(r => r.status === 'done' && r.ts);
+if (savedResults.length > 0) {
+  const latest = savedResults.reduce((a, b) => a.ts > b.ts ? a : b);
+  if (latest.ts) {
+    document.getElementById('lastRun').textContent = 'last run: ' + latest.ts.toLocaleString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  }
+}
+</script>
+</body>
+</html>
