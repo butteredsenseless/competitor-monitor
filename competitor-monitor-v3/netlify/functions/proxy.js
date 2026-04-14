@@ -18,12 +18,16 @@ exports.handler = async function(event) {
   if (!apiKey) {
     return {
       statusCode: 500, headers,
-      body: JSON.stringify({ error: { message: 'ANTHROPIC_API_KEY environment variable not set in Netlify.' } })
+      body: JSON.stringify({ error: { message: 'ANTHROPIC_API_KEY not set in Netlify environment variables.' } })
     };
   }
 
   try {
     const body = JSON.parse(event.body);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -31,16 +35,26 @@ exports.handler = async function(event) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
 
+    clearTimeout(timeout);
     const data = await response.json();
     return { statusCode: response.status, headers, body: JSON.stringify(data) };
 
   } catch (err) {
+    const isTimeout = err.name === 'AbortError';
     return {
-      statusCode: 500, headers,
-      body: JSON.stringify({ error: { message: err.message } })
+      statusCode: isTimeout ? 504 : 500,
+      headers,
+      body: JSON.stringify({
+        error: {
+          message: isTimeout
+            ? 'Request timed out — try running a single competitor rather than all at once.'
+            : err.message
+        }
+      })
     };
   }
 };
