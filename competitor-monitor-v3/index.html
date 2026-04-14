@@ -82,10 +82,7 @@ select:focus{border-color:var(--accent);}
 .pill.medium{border:0.5px solid var(--border2);color:var(--text2);background:rgba(186,117,23,0.08);}
 .pill.low{border:0.5px solid #27500A;color:#639922;background:rgba(99,153,34,0.08);}
 
-.api-key-banner{background:rgba(186,117,23,0.12);border:0.5px solid var(--gold);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);}
-.api-key-banner input{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 10px;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);border-radius:var(--radius);width:340px;margin-left:10px;outline:none;}
-.api-key-banner input:focus{border-color:var(--gold);}
-.api-key-banner button{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 12px;background:var(--gold);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;margin-left:8px;}
+
 
 @media(max-width:900px){
   .grid{grid-template-columns:1fr 1fr;}
@@ -93,7 +90,7 @@ select:focus{border-color:var(--accent);}
 @media(max-width:600px){
   .grid{grid-template-columns:1fr;}
   .cm-stats{gap:16px;}
-  .api-key-banner input{width:180px;}
+
 }
 </style>
 </head>
@@ -110,12 +107,7 @@ select:focus{border-color:var(--accent);}
     </div>
   </div>
 
-  <div class="api-key-banner" id="apiKeyBanner">
-    ⚠ API key required to run analysis.
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." oninput="saveKey()">
-    <button onclick="saveKey();document.getElementById('apiKeyBanner').style.display='none'">save</button>
-    <span style="font-size:9px;color:var(--text3);margin-left:10px;">stored in localStorage — never sent anywhere except Anthropic API</span>
-  </div>
+
 
   <div class="cm-controls">
     <div class="cm-controls-row">
@@ -387,7 +379,6 @@ Please search the web for the most current information available about this comp
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: fullPrompt }]
       })
     });
@@ -402,15 +393,7 @@ Please search the web for the most current information available about this comp
     const content = d.content || [];
     content.forEach(b => { if (b.type === 'text') text += b.text; });
 
-    // If stopped for tool use, send tool results back
-    if (d.stop_reason === 'tool_use' && !text) {
-      const toolResults = content
-        .filter(b => b.type === 'tool_use')
-        .map(b => ({
-          type: 'tool_result',
-          tool_use_id: b.id,
-          content: b.type === 'tool_use' ? 'Search results received. Now write the structured analysis.' : ''
-        }));
+));
 
       const r2 = await fetch('/.netlify/functions/proxy', {
         method: 'POST',
